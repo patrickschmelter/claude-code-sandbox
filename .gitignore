@@ -1,0 +1,4 @@
+.env
+shared/*
+!shared/.gitkeep
+.DS_Store

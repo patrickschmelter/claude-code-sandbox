@@ -1,0 +1,59 @@
+# Claude Code Sandbox
+#
+# Usage:
+#   cp .env.example .env        # Configure firewall, Add API keys if needed
+#   docker compose up -d --build
+#   docker compose exec -u node claude-code bash
+#   claude                      # Start Claude Code
+#   docker compose down         # Stop
+
+services:
+  claude-code:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        CLAUDE_CODE_VERSION: latest
+    container_name: claude-code-sandbox
+    hostname: claude-sandbox
+
+    env_file:
+      - .env
+    environment:
+      - DEVCONTAINER=true
+      - NODE_OPTIONS=--max-old-space-size=4096
+      - FIREWALL_ENABLED=${FIREWALL_ENABLED:-true}
+
+    # Start as root for firewall setup, then switch to node via gosu
+    user: root
+    entrypoint: ["/usr/local/bin/entrypoint.sh"]
+    command: ["bash"]
+
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+      - SETUID
+      - SETGID
+    # no-new-privileges is incompatible with gosu (blocks setuid/setgid).
+    # Security is ensured by cap_drop: ALL + firewall.
+
+    volumes:
+      - ./shared:/home/node/shared
+      - claude-config:/home/node/.claude
+
+    working_dir: /workspace
+    stdin_open: true
+    tty: true
+
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+        reservations:
+          memory: 2G
+
+volumes:
+  claude-config:
+    driver: local

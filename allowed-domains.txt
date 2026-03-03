@@ -1,0 +1,74 @@
+# ===========================================
+# Allowed domains for the firewall
+# One domain per line, comments with #
+# ===========================================
+
+# --- Anthropic ---
+api.anthropic.com
+sentry.io
+statsig.anthropic.com
+statsig.com
+
+# --- VS Code Marketplace ---
+marketplace.visualstudio.com
+gallerycdn.vsassets.io
+vsassetscdn.azureedge.net
+afdx-azureedge-net.trafficmanager.net
+vscode.blob.core.windows.net
+update.code.visualstudio.com
+
+# --- GitHub ---
+github.com
+api.github.com
+codeload.github.com
+objects.githubusercontent.com
+raw.githubusercontent.com
+gist.githubusercontent.com
+github-releases.githubusercontent.com
+
+# --- JavaScript / TypeScript (npm, yarn, pnpm) ---
+registry.npmjs.org
+registry.yarnpkg.com
+
+# --- Python (pip) ---
+pypi.org
+files.pythonhosted.org
+
+# --- Java / Kotlin (Maven, Gradle) ---
+repo.maven.apache.org
+repo1.maven.org
+plugins.gradle.org
+services.gradle.org
+downloads.gradle.org
+downloads.gradle-dn.com
+dl.google.com
+maven.google.com
+
+# --- Rust (cargo) ---
+crates.io
+index.crates.io
+static.crates.io
+static.rust-lang.org
+
+# --- Go ---
+proxy.golang.org
+sum.golang.org
+storage.googleapis.com
+
+# --- Ruby (gems) ---
+rubygems.org
+index.rubygems.org
+
+# --- PHP (Composer) ---
+packagist.org
+repo.packagist.org
+
+# --- .NET / C# (NuGet) ---
+api.nuget.org
+globalcdn.nuget.org
+dotnetcli.azureedge.net
+
+# --- Docker Hub ---
+registry-1.docker.io
+auth.docker.io
+production.cloudflare.docker.com
