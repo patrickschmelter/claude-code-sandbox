@@ -91,7 +91,7 @@ Everything else is blocked (REJECT).
 ├── entrypoint.sh           # Firewall init + user switch (gosu)
 ├── init-firewall.sh        # iptables/ipset network sandbox
 ├── allowed-domains.txt     # Whitelisted domains for the firewall
-├── .env.example            # Environment variable template
 ├── shared/                 # Shared directory with host
+│   └── .env.example        # Environment variable template
 └── .gitignore
 ```

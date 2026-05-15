@@ -1,4 +1,6 @@
 .env
 shared/*
-!shared/.gitkeep
+!shared/.claude
+!shared/.vscode
+!shared/.env.example
 .DS_Store
