@@ -46,10 +46,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # GitHub CLI
 RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
-        | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
+    | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
     && chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
     && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
-        | tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
+    | tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
     && apt-get update \
     && apt-get install -y --no-install-recommends gh \
     && rm -rf /var/lib/apt/lists/*
@@ -57,25 +57,24 @@ RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
 # git-delta (architecture detection for amd64/arm64)
 RUN ARCH="$(dpkg --print-architecture)" && \
     if [ "$ARCH" = "amd64" ]; then \
-        DELTA_ARCH="x86_64-unknown-linux-gnu"; \
+    DELTA_ARCH="x86_64-unknown-linux-gnu"; \
     elif [ "$ARCH" = "arm64" ]; then \
-        DELTA_ARCH="aarch64-unknown-linux-gnu"; \
+    DELTA_ARCH="aarch64-unknown-linux-gnu"; \
     else \
-        echo "Unsupported architecture: $ARCH" && exit 1; \
+    echo "Unsupported architecture: $ARCH" && exit 1; \
     fi && \
     curl -fsSL "https://github.com/dandavison/delta/releases/download/${DELTA_VERSION}/delta-${DELTA_VERSION}-${DELTA_ARCH}.tar.gz" \
-        | tar -xz -C /tmp && \
+    | tar -xz -C /tmp && \
     mv "/tmp/delta-${DELTA_VERSION}-${DELTA_ARCH}/delta" /usr/local/bin/delta && \
     rm -rf /tmp/delta-*
 
-# Terraform
-RUN curl -fsSL https://apt.releases.hashicorp.com/gpg \
-        | gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg \
-    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(. /etc/os-release && echo "$VERSION_CODENAME") main" \
-        | tee /etc/apt/sources.list.d/hashicorp.list > /dev/null \
-    && apt-get update \
-    && apt-get install -y --no-install-recommends terraform \
-    && rm -rf /var/lib/apt/lists/*
+# Terraform (latest binary — version resolved from HashiCorp checkpoint API)
+RUN ARCH="$(dpkg --print-architecture)" \
+    && TF_VERSION="$(curl -fsSL https://checkpoint-api.hashicorp.com/v1/check/terraform | jq -r .current_version)" \
+    && curl -fsSL "https://releases.hashicorp.com/terraform/${TF_VERSION}/terraform_${TF_VERSION}_linux_${ARCH}.zip" -o /tmp/terraform.zip \
+    && unzip -q /tmp/terraform.zip -d /usr/local/bin/ \
+    && chmod +x /usr/local/bin/terraform \
+    && rm /tmp/terraform.zip
 
 # AWS CLI
 RUN ARCH="$(dpkg --print-architecture)" && \
@@ -92,11 +91,8 @@ RUN curl -sL https://aka.ms/InstallAzureCLIDeb | bash \
 # Sudo access: full sudo for node + NOPASSWD for firewall script
 # env_keep: Pass FIREWALL_ENABLED through sudo so the toggle works
 RUN printf 'Defaults:node env_keep += "FIREWALL_ENABLED"\nnode ALL=(ALL) ALL\nnode ALL=(ALL) NOPASSWD: /usr/local/bin/init-firewall.sh\n' \
-        > /etc/sudoers.d/node-firewall \
+    > /etc/sudoers.d/node-firewall \
     && chmod 0440 /etc/sudoers.d/node-firewall
-
-# Claude Code CLI
-RUN npm install -g @anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}
 
 # Firewall and entrypoint scripts
 COPY init-firewall.sh /usr/local/bin/init-firewall.sh
@@ -125,11 +121,16 @@ ENV BUN_INSTALL=/home/node/.bun
 
 USER node
 
-# Install nvm, Node.js 22, and Bun
+# Install nvm, Node.js 22, Bun, Claude Code, and the context-mode plugin
+# (named volume on /home/node/.claude initializes from the image dir on first create,
+# so plugin install at build time persists into the volume.)
 RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash \
     && . "$NVM_DIR/nvm.sh" \
     && nvm install 22 \
     && nvm alias default 22 \
+    && npm install -g @anthropic-ai/claude-code@${CLAUDE_CODE_VERSION} \
+    && claude plugin marketplace add mksglu/context-mode \
+    && claude plugin install context-mode@context-mode \
     && curl -fsSL https://bun.sh/install | bash \
     && echo '. "$NVM_DIR/nvm.sh"' >> ~/.bashrc \
     && echo 'export PATH="$BUN_INSTALL/bin:$PATH"' >> ~/.bashrc \
@@ -149,10 +150,6 @@ RUN curl https://pyenv.run | bash \
 
 # jenv
 RUN git clone https://github.com/jenv/jenv.git ~/.jenv
-
-# context-mode plugin for Claude Code
-RUN npm install -g context-mode \
-    && context-mode upgrade --platform claude-code
 
 # Oh-My-Zsh for node user + zshrc
 RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
